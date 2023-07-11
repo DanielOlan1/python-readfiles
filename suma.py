@@ -1,27 +1,30 @@
-import pandas as pd
 import tkinter as tk
 from tkinter import filedialog
-from tkinter import ttk
-from pandasgui import show
 
-class Aplicacion(tk.Tk):
-    def __init__(self):
-        super().__init__()
-        self.title("Lectura de archivo de Excel")
-
-        boton_abrir = tk.Button(self, text="Abrir archivo de Excel", command=self.abrir_archivo_excel)
-        boton_abrir.pack()
-
-    def abrir_archivo_excel(self):
-        archivo = filedialog.askopenfilename(filetypes=[("Archivos de Excel", "*.xlsx;*.xls")])
+def abrir_archivo_excel():
+    archivo = filedialog.askopenfilename(filetypes=[("Archivos de Excel", "*.xlsx;*.xls")])
+    
+    if archivo:
+        df = pd.read_excel(archivo)
         
-        if archivo:
-            # Leer el archivo de Excel en un DataFrame
-            df = pd.read_excel(archivo)
-            
-            # Crear una ventana de pandasgui con el DataFrame
-            gui = show(df)
+        ventana = tk.Tk()
+        ventana.title("Contenido del archivo Excel")
+        
+        texto = tk.Text(ventana)
+        texto.pack(fill=tk.BOTH, expand=True)  # Hace que el widget de texto se ajuste al tamaño de la ventana
+        
+        for i in range(len(df.index)):
+            for j in range(len(df.columns)):
+                celda = str(df.iloc[i, j])
+                texto.insert(tk.END, celda + "\t")
+            texto.insert(tk.END, "\n")
+        
+        ventana.mainloop()
 
-if __name__ == '__main__':
-    aplicacion = Aplicacion()
-    aplicacion.mainloop()
+ventana_principal = tk.Tk()
+ventana_principal.title("Lectura de archivo de Excel")
+
+boton_abrir = tk.Button(ventana_principal, text="Abrir archivo de Excel", command=abrir_archivo_excel)
+boton_abrir.pack()
+
+ventana_principal.mainloop()

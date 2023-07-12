@@ -93,7 +93,7 @@ class Aplicacion(tk.Tk):
 
         fecha_carga = datos_fila[6]
         fecha_descarga = datos_fila[7]
-        if fecha_descarga == "0":
+        if fecha_descarga == 0:
             self.formulario_texto_tiempoViaje.config(text="El viaje no ha terminado", fg="red")
         else:
             tiempo_viaje = self.calcular_tiempo_viaje(fecha_carga, fecha_descarga)
@@ -113,7 +113,7 @@ class Aplicacion(tk.Tk):
             else:
                 raise ValueError("Formato de archivo de Excel no compatible")
 
-            self.df = pd.read_excel(archivo, engine=engine)
+            df = pd.read_excel(archivo, engine=engine)
 
             columnas_requeridas = [
                 "operador",
@@ -132,7 +132,7 @@ class Aplicacion(tk.Tk):
             ]
 
             # Verificar si todas las columnas requeridas están presentes
-            columnas_faltantes = [col for col in columnas_requeridas if col not in self.df.columns]
+            columnas_faltantes = [col for col in columnas_requeridas if col not in df.columns]
 
             if columnas_faltantes:
                 mensaje = f"Las siguientes columnas no se encontraron en el archivo: {', '.join(columnas_faltantes)}"
@@ -140,7 +140,7 @@ class Aplicacion(tk.Tk):
                 return
 
             # Reordenar las columnas según el listado requerido
-            self.df = self.df[columnas_requeridas]
+            df = df[columnas_requeridas]
 
             self.tabla_frame = tk.Frame(self)
             self.tabla_frame.pack(fill=tk.BOTH, expand=True)
@@ -156,8 +156,8 @@ class Aplicacion(tk.Tk):
             for columna in columnas_requeridas:
                 self.tabla.heading(columna, text=columna)
 
-            for i in range(len(self.df.index)):
-                fila = [str(self.df.iloc[i, j]) if not pd.isna(self.df.iloc[i, j]) else "0" for j in range(len(self.df.columns))]
+            for i in range(len(df.index)):
+                fila = [str(df.iloc[i, j]) if not pd.isna(df.iloc[i, j]) else "0" for j in range(len(df.columns))]
                 self.tabla.insert("", tk.END, values=fila)
 
             for columna in columnas_requeridas:
@@ -271,12 +271,12 @@ class Aplicacion(tk.Tk):
             self.tabla.delete(child)
         for i, fila in self.df.iterrows():
             if texto_busqueda in str(fila.values).lower():
-                self.tabla.insert("", tk.END, values=[str(v) for v in fila.values])
+                self.tabla.insert("0", tk.END, values=[str(v) for v in fila.values])
 
     def calcular_tiempo_viaje(self, fecha_carga, fecha_descarga):
         formato_fecha = "%Y-%m-%dT%H:%M:%S"  # Formato ISO 8601
         fecha_carga = datetime.strptime(fecha_carga, formato_fecha)
-        if fecha_descarga == "0":
+        if fecha_descarga == 0:
             tiempo_viaje = "El viaje no ha terminado"
         else:
             fecha_descarga = datetime.strptime(fecha_descarga, formato_fecha)

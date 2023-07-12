@@ -93,7 +93,7 @@ class Aplicacion(tk.Tk):
 
         fecha_carga = datos_fila[6]
         fecha_descarga = datos_fila[7]
-        if fecha_descarga == 0:
+        if fecha_descarga == "0":
             self.formulario_texto_tiempoViaje.config(text="El viaje no ha terminado", fg="red")
         else:
             tiempo_viaje = self.calcular_tiempo_viaje(fecha_carga, fecha_descarga)
@@ -271,16 +271,14 @@ class Aplicacion(tk.Tk):
             self.tabla.delete(child)
         for i, fila in self.df.iterrows():
             if texto_busqueda in str(fila.values).lower():
-                fila = [str(v) if not pd.isna(v) else "" for v in fila.values]
-                self.tabla.insert("", tk.END, values=fila)
+                self.tabla.insert("", tk.END, values=[str(v) for v in fila.values])
 
     def calcular_tiempo_viaje(self, fecha_carga, fecha_descarga):
         formato_fecha = "%Y-%m-%dT%H:%M:%S"  # Formato ISO 8601
         fecha_carga = datetime.strptime(fecha_carga, formato_fecha)
-        if fecha_descarga == 0:
+        if fecha_descarga == "0":
             tiempo_viaje = "El viaje no ha terminado"
         else:
-            fecha_descarga = str(fecha_descarga)  # Convertir a cadena de texto si es un entero
             fecha_descarga = datetime.strptime(fecha_descarga, formato_fecha)
             tiempo_viaje = fecha_descarga - fecha_carga
         return tiempo_viaje

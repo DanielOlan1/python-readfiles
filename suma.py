@@ -39,6 +39,9 @@ class Aplicacion(tk.Tk):
         boton_buscar = tk.Button(self, text="Buscar", command=self.filtrar_tabla)
         boton_buscar.pack(pady=5)
 
+        self.texto_cartas_canceladas = tk.Label(self, text="Cartas Porte canceladas: 0", fg="black")
+        self.texto_cartas_canceladas.pack(pady=5)
+
         self.geometry("800x600")
 
     def mostrar_datos(self, event):
@@ -276,6 +279,13 @@ class Aplicacion(tk.Tk):
         for i, fila in self.df.iterrows():
             if texto_busqueda in str(fila.values).lower():
                 self.tabla.insert("", tk.END, values=[str(v) for v in fila.values])
+        cartas_canceladas = self.calcular_cartas_canceladas()
+        self.texto_cartas_canceladas.config(text=f"Cartas Porte canceladas: {cartas_canceladas}", fg="black")
+
+    def calcular_cartas_canceladas(self):
+        origen_destino_iguales = self.df[self.df["origenMunicipio"] == self.df["destinoMunicipio"]]
+        cartas_canceladas = len(origen_destino_iguales)
+        return cartas_canceladas
 
     def calcular_tiempo_viaje(self, fecha_carga, fecha_descarga):
         formato_fecha = "%Y-%m-%dT%H:%M:%S"  # Formato ISO 8601

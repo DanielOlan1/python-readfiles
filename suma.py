@@ -280,7 +280,7 @@ class Aplicacion(tk.Tk):
     def calcular_tiempo_viaje(self, fecha_carga, fecha_descarga):
         formato_fecha = "%Y-%m-%dT%H:%M:%S"  # Formato ISO 8601
         fecha_carga = datetime.strptime(fecha_carga, formato_fecha)
-        if fecha_descarga == "0" or pd.isna(fecha_descarga):
+        if fecha_descarga == "0" or fecha_descarga == "nan":
             tiempo_viaje = "El viaje no ha terminado"
         else:
             fecha_descarga = datetime.strptime(str(fecha_descarga), formato_fecha)

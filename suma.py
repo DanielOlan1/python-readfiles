@@ -28,6 +28,7 @@ class Aplicacion(tk.Tk):
         self.formulario_texto_tiempoViaje = None
         self.busqueda_texto = None
         self.df = None
+        self.texto_cartas_canceladas = None
 
         boton_abrir = tk.Button(self, text="Abrir archivo de Excel", command=self.abrir_archivo_excel)
         boton_abrir.pack(pady=10)
@@ -39,8 +40,8 @@ class Aplicacion(tk.Tk):
         boton_buscar = tk.Button(self, text="Buscar", command=self.filtrar_tabla)
         boton_buscar.pack(pady=5)
 
-        self.texto_cartas_canceladas = tk.Label(self, text="Cartas Porte canceladas: 0", fg="black")
-        self.texto_cartas_canceladas.pack(pady=5)
+        self.texto_cartas_canceladas = tk.Label(self)
+        self.texto_cartas_canceladas.pack()
 
         self.geometry("800x600")
 
@@ -181,6 +182,10 @@ class Aplicacion(tk.Tk):
 
             # Almacenar el DataFrame cargado en un atributo de la clase
             self.df = df
+            cartas_canceladas = self.calcular_cartas_canceladas()
+            self.texto_cartas_canceladas.config(
+                text=f"Cartas Porte canceladas: {cartas_canceladas}", fg="black"
+            )
 
     def crear_formulario(self):
         self.formulario_frame = tk.Frame(self)
@@ -279,13 +284,6 @@ class Aplicacion(tk.Tk):
         for i, fila in self.df.iterrows():
             if texto_busqueda in str(fila.values).lower():
                 self.tabla.insert("", tk.END, values=[str(v) for v in fila.values])
-        cartas_canceladas = self.calcular_cartas_canceladas()
-        self.texto_cartas_canceladas.config(text=f"Cartas Porte canceladas: {cartas_canceladas}", fg="black")
-
-    def calcular_cartas_canceladas(self):
-        origen_destino_iguales = self.df[self.df["origenMunicipio"] == self.df["destinoMunicipio"]]
-        cartas_canceladas = len(origen_destino_iguales)
-        return cartas_canceladas
 
     def calcular_tiempo_viaje(self, fecha_carga, fecha_descarga):
         formato_fecha = "%Y-%m-%dT%H:%M:%S"  # Formato ISO 8601
@@ -296,6 +294,15 @@ class Aplicacion(tk.Tk):
             fecha_descarga = datetime.strptime(str(fecha_descarga), formato_fecha)
             tiempo_viaje = fecha_descarga - fecha_carga
         return tiempo_viaje
+
+    def calcular_cartas_canceladas(self):
+        contador = 0
+        for _, fila in self.df.iterrows():
+            origen_municipio = fila["origenMunicipio"]
+            destino_municipio = fila["destinoMunicipio"]
+            if origen_municipio == destino_municipio:
+                contador += 1
+        return contador
 
 
 if __name__ == "__main__":

@@ -27,12 +27,14 @@ class Aplicacion(tk.Tk):
         self.formulario_texto_faltante = None
         self.formulario_texto_tiempoViaje = None
         self.busqueda_texto = None
+        self.df = None
 
         boton_abrir = tk.Button(self, text="Abrir archivo de Excel", command=self.abrir_archivo_excel)
         boton_abrir.pack(pady=10)
 
         self.busqueda_texto = tk.Entry(self)
         self.busqueda_texto.pack(pady=5)
+        self.busqueda_texto.bind("<KeyRelease>", self.filtrar_tabla)
 
         boton_buscar = tk.Button(self, text="Buscar", command=self.filtrar_tabla)
         boton_buscar.pack(pady=5)
@@ -174,6 +176,9 @@ class Aplicacion(tk.Tk):
 
             self.crear_formulario()
 
+            # Almacenar el DataFrame cargado en un atributo de la clase
+            self.df = df
+
     def crear_formulario(self):
         self.formulario_frame = tk.Frame(self)
         self.formulario_frame.pack(fill=tk.BOTH, expand=True)
@@ -265,21 +270,20 @@ class Aplicacion(tk.Tk):
         self.formulario_texto_tiempoViaje = tk.Label(self.formulario_frame, height=1, width=30)
         self.formulario_texto_tiempoViaje.grid(row=4, column=3, padx=10, pady=5)
 
-    def filtrar_tabla(self):
+    def filtrar_tabla(self, event=None):
         texto_busqueda = self.busqueda_texto.get().lower()
-        for child in self.tabla.get_children():
-            self.tabla.delete(child)
+        self.tabla.delete(*self.tabla.get_children())
         for i, fila in self.df.iterrows():
             if texto_busqueda in str(fila.values).lower():
-                self.tabla.insert("0", tk.END, values=[str(v) for v in fila.values])
+                self.tabla.insert("", tk.END, values=[str(v) for v in fila.values])
 
     def calcular_tiempo_viaje(self, fecha_carga, fecha_descarga):
         formato_fecha = "%Y-%m-%dT%H:%M:%S"  # Formato ISO 8601
         fecha_carga = datetime.strptime(fecha_carga, formato_fecha)
-        if fecha_descarga == 0:
+        if fecha_descarga == "0" or pd.isna(fecha_descarga):
             tiempo_viaje = "El viaje no ha terminado"
         else:
-            fecha_descarga = datetime.strptime(fecha_descarga, formato_fecha)
+            fecha_descarga = datetime.strptime(str(fecha_descarga), formato_fecha)
             tiempo_viaje = fecha_descarga - fecha_carga
         return tiempo_viaje
 

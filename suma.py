@@ -5,6 +5,37 @@ from tkinter import ttk
 from datetime import datetime
 
 
+def mostrar_cartas_canceladas(df):
+    cartas_canceladas = [fila["cartaPorte"] for _, fila in df.iterrows() if fila["origenMunicipio"] == fila["destinoMunicipio"]]
+    if cartas_canceladas:
+        ventana_cartas_canceladas = tk.Toplevel()
+        ventana_cartas_canceladas.title("Cartas Porte Canceladas")
+
+        tabla_frame = tk.Frame(ventana_cartas_canceladas)
+        tabla_frame.pack(fill=tk.BOTH, expand=True)
+
+        tabla_scroll = ttk.Scrollbar(tabla_frame, orient="vertical")
+        tabla_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        tabla = ttk.Treeview(tabla_frame, yscrollcommand=tabla_scroll.set)
+        tabla_scroll.config(command=tabla.yview)
+
+        columnas = ["operador", "unidad", "letraPR", "origenMunicipio", "destinoMunicipio", "cliente", "producto", "cartaPorte"]
+        tabla["columns"] = columnas
+
+        for columna in columnas:
+            tabla.heading(columna, text=columna)
+
+        for _, fila in df.iterrows():
+            if fila["origenMunicipio"] == fila["destinoMunicipio"]:
+                valores = [str(fila[col]) for col in columnas]
+                tabla.insert("", tk.END, values=valores)
+
+        tabla.pack(fill=tk.BOTH, expand=True)
+    else:
+        tk.messagebox.showinfo("Cartas Porte Canceladas", "No hay Cartas Porte Canceladas")
+
+
 class Aplicacion(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -48,7 +79,9 @@ class Aplicacion(tk.Tk):
         boton_buscar.pack(side=tk.LEFT, padx=5, pady=5)
 
         # Botón "Ver Cartas Porte Canceladas"
-        boton_ver_cartas = tk.Button(self.barra_tareas, text="Ver Cartas Porte Canceladas", command=self.mostrar_cartas_canceladas)
+        boton_ver_cartas = tk.Button(
+            self.barra_tareas, text="Ver Cartas Porte Canceladas", command=lambda: mostrar_cartas_canceladas(self.df)
+        )
         boton_ver_cartas.pack(side=tk.LEFT, padx=5, pady=5)
 
         # Texto "Cartas Porte Canceladas"
@@ -308,21 +341,13 @@ class Aplicacion(tk.Tk):
     def calcular_cartas_canceladas(self):
         contador = 0
         for _, fila in self.df.iterrows():
-            origen_municipio = fila["origenMunicipio"]
-            destino_municipio = fila["destinoMunicipio"]
+            origen_municipio = str(fila["origenMunicipio"]).lower()
+            destino_municipio = str(fila["destinoMunicipio"]).lower()
             if origen_municipio == destino_municipio:
                 contador += 1
         return contador
 
-    def mostrar_cartas_canceladas(self):
-        cartas_canceladas = [fila["cartaPorte"] for _, fila in self.df.iterrows() if fila["origenMunicipio"] == fila["destinoMunicipio"]]
-        if cartas_canceladas:
-            mensaje = "Cartas Porte Canceladas:\n" + "\n".join(cartas_canceladas)
-        else:
-            mensaje = "No hay Cartas Porte Canceladas"
-        tk.messagebox.showinfo("Cartas Porte Canceladas", mensaje)
-
 
 if __name__ == "__main__":
-    aplicacion = Aplicacion()
-    aplicacion.mainloop()
+    app = Aplicacion()
+    app.mainloop()

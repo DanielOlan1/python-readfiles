@@ -2,11 +2,20 @@ import pandas as pd
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
+from tkinter import messagebox
 from datetime import datetime
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+import math
+from fpdf import FPDF
 
 
 def mostrar_cartas_canceladas(df):
-    cartas_canceladas = [fila["cartaPorte"] for _, fila in df.iterrows() if fila["origenMunicipio"] == fila["destinoMunicipio"]]
+    cartas_canceladas = [
+        fila["cartaPorte"]
+        for _, fila in df.iterrows()
+        if fila["origenMunicipio"] == fila["destinoMunicipio"]
+    ]
     if cartas_canceladas:
         ventana_cartas_canceladas = tk.Toplevel()
         ventana_cartas_canceladas.title("Cartas Porte Canceladas")
@@ -20,7 +29,17 @@ def mostrar_cartas_canceladas(df):
         tabla = ttk.Treeview(tabla_frame, yscrollcommand=tabla_scroll.set)
         tabla_scroll.config(command=tabla.yview)
 
-        columnas = ["operador", "unidad", "letraPR", "origenMunicipio", "destinoMunicipio", "cliente", "producto", "cartaPorte", "cancelada"]
+        columnas = [
+            "operador",
+            "unidad",
+            "letraPR",
+            "origenMunicipio",
+            "destinoMunicipio",
+            "cliente",
+            "producto",
+            "cartaPorte",
+            "cancelada",
+        ]
         tabla["columns"] = columnas
 
         for columna in columnas:
@@ -28,16 +47,65 @@ def mostrar_cartas_canceladas(df):
 
         for _, fila in df.iterrows():
             if fila["origenMunicipio"] == fila["destinoMunicipio"]:
-                fila_values = [str(fila[col]) for col in columnas[:-1]]  # Excluir la columna "cancelada"
+                fila_values = [
+                    str(fila[col]) if not pd.isna(fila[col]) else ""
+                    for col in columnas[:-1]
+                ]  # Excluir la columna "cancelada"
                 fila_values.append("cancelada")
                 tabla.insert("", tk.END, values=fila_values, tags=("cancelada",))
 
         tabla.tag_configure("cancelada", foreground="red")  # Configurar color rojo para las filas con la etiqueta "cancelada"
 
         tabla.pack(fill=tk.BOTH, expand=True)
-    else:
-        tk.messagebox.showinfo("Cartas Porte Canceladas", "No hay Cartas Porte Canceladas")
 
+        boton_exportar = tk.Button(
+            ventana_cartas_canceladas,
+            text="Exportar a PDF",
+            command=lambda: exportar_a_pdf(cartas_canceladas),
+        )
+        boton_exportar.pack(pady=10)
+    else:
+        messagebox.showinfo("Cartas Porte Canceladas", "No hay Cartas Porte Canceladas")
+
+
+def exportar_a_pdf(cartas_canceladas):
+    if cartas_canceladas:
+        archivo_guardado = filedialog.asksaveasfilename(
+            defaultextension=".pdf",
+            filetypes=[("Archivo PDF", "*.pdf")],
+            title="Guardar como PDF",
+        )
+        if archivo_guardado:
+            pdf = canvas.Canvas(archivo_guardado, pagesize=letter)
+
+            # Configuraciones del PDF
+            pdf.setTitle("Cartas Porte Canceladas")
+            pdf.setFont("Helvetica-Bold", 14)
+            pdf.drawString(50, 750, "Cartas Porte Canceladas")
+
+            pdf.setFont("Helvetica", 12)
+            y = 720
+            for carta_porte in cartas_canceladas:
+                # Obtener los datos de la carta porte
+                datos_carta_porte = obtener_datos_carta_porte(carta_porte)
+
+                # Imprimir los parámetros en el PDF
+                pdf.drawString(50, y, "Operador: " + datos_carta_porte["operador"])
+                pdf.drawString(50, y - 20, "Unidad: " + datos_carta_porte["unidad"])
+                pdf.drawString(50, y - 40, "Letra PR: " + datos_carta_porte["letraPR"])
+                pdf.drawString(50, y - 60, "Origen Municipio: " + datos_carta_porte["origenMunicipio"])
+                pdf.drawString(50, y - 80, "Destino Municipio: " + datos_carta_porte["destinoMunicipio"])
+                pdf.drawString(50, y - 100, "Cliente: " + datos_carta_porte["cliente"])
+                pdf.drawString(50, y - 120, "Producto: " + datos_carta_porte["producto"])
+                pdf.drawString(50, y - 140, "Carta Porte: " + datos_carta_porte["cartaPorte"])
+                pdf.drawString(50, y - 160, "Cancelada: " + datos_carta_porte["cancelada"])
+
+                y -= 200
+
+            pdf.save()
+            messagebox.showinfo("Exportar a PDF", "Las Cartas Porte Canceladas se exportaron correctamente.")
+    else:
+        messagebox.showinfo("Exportar a PDF", "No hay Cartas Porte Canceladas para exportar.")
 
 class Aplicacion(tk.Tk):
     def __init__(self):
@@ -190,7 +258,7 @@ class Aplicacion(tk.Tk):
 
             if columnas_faltantes:
                 mensaje = f"Las siguientes columnas no se encontraron en el archivo: {', '.join(columnas_faltantes)}"
-                tk.messagebox.showwarning("Columnas faltantes", mensaje)
+                messagebox.showwarning("Columnas faltantes", mensaje)
                 return
 
             # Reordenar las columnas según el listado requerido
@@ -231,7 +299,9 @@ class Aplicacion(tk.Tk):
             # Almacenar el DataFrame cargado en un atributo de la clase
             self.df = df
             cartas_canceladas = self.calcular_cartas_canceladas()
-            self.texto_cartas_canceladas.config(text=f"Cartas Porte canceladas: {cartas_canceladas}", fg="black")
+            self.texto_cartas_canceladas.config(
+                text=f"Cartas Porte canceladas: {cartas_canceladas}", fg="black"
+            )
 
     def crear_formulario(self):
         self.formulario_frame = tk.Frame(self)
@@ -316,39 +386,41 @@ class Aplicacion(tk.Tk):
         self.formulario_texto_faltante = tk.Text(self.formulario_frame, height=1, width=30)
         self.formulario_texto_faltante.grid(row=4, column=1, padx=10, pady=5)
 
-        formulario_label_tiempoViaje = tk.Label(
-            self.formulario_frame, text="Tiempo de Viaje:", fg="green", font=("Arial", 12)
-        )
+        formulario_label_tiempoViaje = tk.Label(self.formulario_frame, text="Tiempo de Viaje:")
         formulario_label_tiempoViaje.grid(row=4, column=2, padx=10, pady=5)
 
-        self.formulario_texto_tiempoViaje = tk.Label(self.formulario_frame, height=1, width=30)
+        self.formulario_texto_tiempoViaje = tk.Label(self.formulario_frame, text="", fg="black")
         self.formulario_texto_tiempoViaje.grid(row=4, column=3, padx=10, pady=5)
 
     def filtrar_tabla(self, event=None):
-        texto_busqueda = self.busqueda_texto.get().lower()
+        texto_busqueda = self.busqueda_texto.get()
         self.tabla.delete(*self.tabla.get_children())
-        for i, fila in self.df.iterrows():
-            if texto_busqueda in str(fila.values).lower():
-                self.tabla.insert("", tk.END, values=[str(v) for v in fila.values])
+        for i in range(len(self.df.index)):
+            fila = [
+                str(self.df.iloc[i, j]) if not pd.isna(self.df.iloc[i, j]) else "0"
+                for j in range(len(self.df.columns))
+            ]
+            if texto_busqueda.lower() in " ".join(fila).lower():
+                self.tabla.insert("", tk.END, values=fila)
 
     def calcular_tiempo_viaje(self, fecha_carga, fecha_descarga):
-        formato_fecha = "%Y-%m-%dT%H:%M:%S"  # Formato ISO 8601
-        fecha_carga = datetime.strptime(fecha_carga, formato_fecha)
-        if fecha_descarga == "0" or fecha_descarga == "nan":
-            tiempo_viaje = "El viaje no ha terminado"
-        else:
-            fecha_descarga = datetime.strptime(str(fecha_descarga), formato_fecha)
+        if fecha_carga != 0 and fecha_descarga != 0:
+            fecha_carga = pd.to_datetime(fecha_carga, format="%Y-%m-%d %H:%M:%S")
+            fecha_descarga = pd.to_datetime(fecha_descarga, format="%Y-%m-%d %H:%M:%S")
             tiempo_viaje = fecha_descarga - fecha_carga
-        return tiempo_viaje
+            horas_viaje = math.floor(tiempo_viaje.total_seconds() / 3600)
+            minutos_viaje = math.floor((tiempo_viaje.total_seconds() % 3600) / 60)
+            return f"{horas_viaje}h {minutos_viaje}m"
+        else:
+            return "El viaje no ha terminado"
 
     def calcular_cartas_canceladas(self):
-        contador = 0
-        for _, fila in self.df.iterrows():
-            origen_municipio = str(fila["origenMunicipio"]).lower()
-            destino_municipio = str(fila["destinoMunicipio"]).lower()
-            if origen_municipio == destino_municipio:
-                contador += 1
-        return contador
+        cartas_canceladas = [
+            fila["cartaPorte"]
+            for _, fila in self.df.iterrows()
+            if fila["origenMunicipio"] == fila["destinoMunicipio"]
+        ]
+        return len(cartas_canceladas)
 
 
 if __name__ == "__main__":

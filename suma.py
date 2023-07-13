@@ -20,7 +20,7 @@ def mostrar_cartas_canceladas(df):
         tabla = ttk.Treeview(tabla_frame, yscrollcommand=tabla_scroll.set)
         tabla_scroll.config(command=tabla.yview)
 
-        columnas = ["operador", "unidad", "letraPR", "origenMunicipio", "destinoMunicipio", "cliente", "producto", "cartaPorte"]
+        columnas = ["operador", "unidad", "letraPR", "origenMunicipio", "destinoMunicipio", "cliente", "producto", "cartaPorte", "cancelada"]
         tabla["columns"] = columnas
 
         for columna in columnas:
@@ -28,8 +28,11 @@ def mostrar_cartas_canceladas(df):
 
         for _, fila in df.iterrows():
             if fila["origenMunicipio"] == fila["destinoMunicipio"]:
-                valores = [str(fila[col]) for col in columnas]
-                tabla.insert("", tk.END, values=valores)
+                fila_values = [str(fila[col]) for col in columnas[:-1]]  # Excluir la columna "cancelada"
+                fila_values.append("cancelada")
+                tabla.insert("", tk.END, values=fila_values, tags=("cancelada",))
+
+        tabla.tag_configure("cancelada", foreground="red")  # Configurar color rojo para las filas con la etiqueta "cancelada"
 
         tabla.pack(fill=tk.BOTH, expand=True)
     else:

@@ -8,11 +8,21 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import math
 from fpdf import FPDF
-
+import os
 
 def mostrar_cartas_canceladas(df):
     cartas_canceladas = [
-        fila["cartaPorte"]
+        {
+            "operador": fila["operador"],
+            "unidad": fila["unidad"],
+            "letraPR": fila["letraPR"],
+            "origenMunicipio": fila["origenMunicipio"],
+            "destinoMunicipio": fila["destinoMunicipio"],
+            "cliente": fila["cliente"],
+            "producto": fila["producto"],
+            "cartaPorte": fila["cartaPorte"],
+            "cancelada": "Yes",
+        }
         for _, fila in df.iterrows()
         if fila["origenMunicipio"] == fila["destinoMunicipio"]
     ]
@@ -45,16 +55,15 @@ def mostrar_cartas_canceladas(df):
         for columna in columnas:
             tabla.heading(columna, text=columna)
 
-        for _, fila in df.iterrows():
-            if fila["origenMunicipio"] == fila["destinoMunicipio"]:
-                fila_values = [
-                    str(fila[col]) if not pd.isna(fila[col]) else ""
-                    for col in columnas[:-1]
-                ]  # Excluir la columna "cancelada"
-                fila_values.append("cancelada")
-                tabla.insert("", tk.END, values=fila_values, tags=("cancelada",))
+        for carta_porte_data in cartas_canceladas:
+            fila_values = [
+                str(carta_porte_data[col]) if not pd.isna(carta_porte_data[col]) else ""
+                for col in columnas[:-1]
+            ]  # Exclude the "cancelada" column
+            fila_values.append("cancelada")
+            tabla.insert("", tk.END, values=fila_values, tags=("cancelada",))
 
-        tabla.tag_configure("cancelada", foreground="red")  # Configurar color rojo para las filas con la etiqueta "cancelada"
+        tabla.tag_configure("cancelada", foreground="red")  # Configure red color for rows with the "cancelada" tag
 
         tabla.pack(fill=tk.BOTH, expand=True)
 
@@ -68,17 +77,37 @@ def mostrar_cartas_canceladas(df):
         messagebox.showinfo("Cartas Porte Canceladas", "No hay Cartas Porte Canceladas")
 
 
+def obtener_datos_carta_porte(carta_porte_data):
+    return {
+        "operador": carta_porte_data["operador"],
+        "unidad": carta_porte_data["unidad"],
+        "letraPR": carta_porte_data["letraPR"],
+        "origenMunicipio": carta_porte_data["origenMunicipio"],
+        "destinoMunicipio": carta_porte_data["destinoMunicipio"],
+        "cliente": carta_porte_data["cliente"],
+        "producto": carta_porte_data["producto"],
+        "cartaPorte": carta_porte_data["cartaPorte"],
+        "cancelada": carta_porte_data["cancelada"],
+    }
+
+
 def exportar_a_pdf(cartas_canceladas):
     if cartas_canceladas:
+        default_file_name = "CARTAS_PORTES_CANCELADAS"
+        file_index = 1
+        while os.path.exists(f"{default_file_name}{file_index}.pdf"):
+            file_index += 1
+        default_file_name += str(file_index)
+
         archivo_guardado = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("Archivo PDF", "*.pdf")],
             title="Guardar como PDF",
+            initialfile=default_file_name,
         )
         if archivo_guardado:
             pdf = canvas.Canvas(archivo_guardado, pagesize=letter)
 
-            # Configuraciones del PDF
             pdf.setTitle("Cartas Porte Canceladas")
             pdf.setFont("Helvetica-Bold", 14)
             pdf.drawString(50, 750, "Cartas Porte Canceladas")
@@ -86,19 +115,17 @@ def exportar_a_pdf(cartas_canceladas):
             pdf.setFont("Helvetica", 12)
             y = 720
             for carta_porte in cartas_canceladas:
-                # Obtener los datos de la carta porte
                 datos_carta_porte = obtener_datos_carta_porte(carta_porte)
 
-                # Imprimir los parámetros en el PDF
-                pdf.drawString(50, y, "Operador: " + datos_carta_porte["operador"])
-                pdf.drawString(50, y - 20, "Unidad: " + datos_carta_porte["unidad"])
-                pdf.drawString(50, y - 40, "Letra PR: " + datos_carta_porte["letraPR"])
-                pdf.drawString(50, y - 60, "Origen Municipio: " + datos_carta_porte["origenMunicipio"])
-                pdf.drawString(50, y - 80, "Destino Municipio: " + datos_carta_porte["destinoMunicipio"])
-                pdf.drawString(50, y - 100, "Cliente: " + datos_carta_porte["cliente"])
-                pdf.drawString(50, y - 120, "Producto: " + datos_carta_porte["producto"])
-                pdf.drawString(50, y - 140, "Carta Porte: " + datos_carta_porte["cartaPorte"])
-                pdf.drawString(50, y - 160, "Cancelada: " + datos_carta_porte["cancelada"])
+                pdf.drawString(50, y, "Operador: " + str(datos_carta_porte["operador"]))
+                pdf.drawString(50, y - 20, "Unidad: " + str(datos_carta_porte["unidad"]))
+                pdf.drawString(50, y - 40, "Letra PR: " + str(datos_carta_porte["letraPR"]))
+                pdf.drawString(50, y - 60, "Origen Municipio: " + str(datos_carta_porte["origenMunicipio"]))
+                pdf.drawString(50, y - 80, "Destino Municipio: " + str(datos_carta_porte["destinoMunicipio"]))
+                pdf.drawString(50, y - 100, "Cliente: " + str(datos_carta_porte["cliente"]))
+                pdf.drawString(50, y - 120, "Producto: " + str(datos_carta_porte["producto"]))
+                pdf.drawString(50, y - 140, "Carta Porte: " + str(datos_carta_porte["cartaPorte"]))
+                pdf.drawString(50, y - 160, "Cancelada: " + str(datos_carta_porte["cancelada"]))
 
                 y -= 200
 
@@ -106,6 +133,8 @@ def exportar_a_pdf(cartas_canceladas):
             messagebox.showinfo("Exportar a PDF", "Las Cartas Porte Canceladas se exportaron correctamente.")
     else:
         messagebox.showinfo("Exportar a PDF", "No hay Cartas Porte Canceladas para exportar.")
+
+
 
 class Aplicacion(tk.Tk):
     def __init__(self):

@@ -135,7 +135,6 @@ def exportar_a_pdf(cartas_canceladas):
         messagebox.showinfo("Exportar a PDF", "No hay Cartas Porte Canceladas para exportar.")
 
 
-
 class Aplicacion(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -422,36 +421,36 @@ class Aplicacion(tk.Tk):
         self.formulario_texto_tiempoViaje.grid(row=4, column=3, padx=10, pady=5)
 
     def filtrar_tabla(self, event=None):
-        texto_busqueda = self.busqueda_texto.get()
-        self.tabla.delete(*self.tabla.get_children())
-        for i in range(len(self.df.index)):
-            fila = [
-                str(self.df.iloc[i, j]) if not pd.isna(self.df.iloc[i, j]) else "0"
-                for j in range(len(self.df.columns))
-            ]
-            if texto_busqueda.lower() in " ".join(fila).lower():
-                self.tabla.insert("", tk.END, values=fila)
+        valor_busqueda = self.busqueda_texto.get()
+        self.tabla.selection_remove(self.tabla.selection())
+        if valor_busqueda:
+            for item in self.tabla.get_children():
+                fila = self.tabla.item(item)["values"]
+                if valor_busqueda.lower() in [str(valor).lower() for valor in fila]:
+                    self.tabla.selection_add(item)
 
     def calcular_tiempo_viaje(self, fecha_carga, fecha_descarga):
-        if fecha_carga != 0 and fecha_descarga != 0:
-            fecha_carga = pd.to_datetime(fecha_carga, format="%Y-%m-%d %H:%M:%S")
-            fecha_descarga = pd.to_datetime(fecha_descarga, format="%Y-%m-%d %H:%M:%S")
-            tiempo_viaje = fecha_descarga - fecha_carga
-            horas_viaje = math.floor(tiempo_viaje.total_seconds() / 3600)
-            minutos_viaje = math.floor((tiempo_viaje.total_seconds() % 3600) / 60)
-            return f"{horas_viaje}h {minutos_viaje}m"
-        else:
-            return "El viaje no ha terminado"
+        fecha_carga = datetime.strptime(str(fecha_carga), "%Y-%m-%d %H:%M:%S")
+        fecha_descarga = datetime.strptime(str(fecha_descarga), "%Y-%m-%d %H:%M:%S")
+
+        tiempo_viaje = fecha_descarga - fecha_carga
+        dias = tiempo_viaje.days
+        horas = tiempo_viaje.seconds // 3600
+        minutos = (tiempo_viaje.seconds // 60) % 60
+
+        return f"{dias} días, {horas} horas, {minutos} minutos"
 
     def calcular_cartas_canceladas(self):
-        cartas_canceladas = [
-            fila["cartaPorte"]
-            for _, fila in self.df.iterrows()
-            if fila["origenMunicipio"] == fila["destinoMunicipio"]
-        ]
-        return len(cartas_canceladas)
+        cartas_canceladas = len(
+            [
+                fila
+                for _, fila in self.df.iterrows()
+                if fila["origenMunicipio"] == fila["destinoMunicipio"]
+            ]
+        )
+        return cartas_canceladas
 
 
 if __name__ == "__main__":
-    app = Aplicacion()
-    app.mainloop()
+    aplicacion = Aplicacion()
+    aplicacion.mainloop()

@@ -430,15 +430,18 @@ class Aplicacion(tk.Tk):
                     self.tabla.selection_add(item)
 
     def calcular_tiempo_viaje(self, fecha_carga, fecha_descarga):
-        fecha_carga = datetime.strptime(str(fecha_carga), "%Y-%m-%d %H:%M:%S")
-        fecha_descarga = datetime.strptime(str(fecha_descarga), "%Y-%m-%d %H:%M:%S")
+     formato_fecha = "%Y-%m-%dT%H:%M:%S"  # Formato de fecha en tus datos
 
-        tiempo_viaje = fecha_descarga - fecha_carga
-        dias = tiempo_viaje.days
-        horas = tiempo_viaje.seconds // 3600
-        minutos = (tiempo_viaje.seconds // 60) % 60
+     fecha_carga = datetime.strptime(str(fecha_carga), formato_fecha)
+     fecha_descarga = datetime.strptime(str(fecha_descarga), formato_fecha)
 
-        return f"{dias} días, {horas} horas, {minutos} minutos"
+     tiempo_viaje = fecha_descarga - fecha_carga
+     dias = tiempo_viaje.days
+     horas = tiempo_viaje.seconds // 3600
+     minutos = (tiempo_viaje.seconds // 60) % 60
+
+     return f"{dias} días, {horas} horas, {minutos} minutos"
+
 
     def calcular_cartas_canceladas(self):
         cartas_canceladas = len(

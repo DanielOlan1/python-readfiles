@@ -30,18 +30,30 @@ class Aplicacion(tk.Tk):
         self.df = None
         self.texto_cartas_canceladas = None
 
-        boton_abrir = tk.Button(self, text="Abrir archivo de Excel", command=self.abrir_archivo_excel)
-        boton_abrir.pack(pady=10)
+        # Crear la barra de tareas
+        self.barra_tareas = tk.Frame(self)
+        self.barra_tareas.pack(side=tk.TOP, fill=tk.X)
 
-        self.busqueda_texto = tk.Entry(self)
-        self.busqueda_texto.pack(pady=5)
+        # Botón "Abrir archivo de Excel"
+        boton_abrir = tk.Button(self.barra_tareas, text="Abrir archivo de Excel", command=self.abrir_archivo_excel)
+        boton_abrir.pack(side=tk.LEFT, padx=5, pady=5)
+
+        # Cuadro de búsqueda
+        self.busqueda_texto = tk.Entry(self.barra_tareas)
+        self.busqueda_texto.pack(side=tk.LEFT, padx=5, pady=5)
         self.busqueda_texto.bind("<KeyRelease>", self.filtrar_tabla)
 
-        boton_buscar = tk.Button(self, text="Buscar", command=self.filtrar_tabla)
-        boton_buscar.pack(pady=5)
+        # Botón "Buscar"
+        boton_buscar = tk.Button(self.barra_tareas, text="Buscar", command=self.filtrar_tabla)
+        boton_buscar.pack(side=tk.LEFT, padx=5, pady=5)
 
-        self.texto_cartas_canceladas = tk.Label(self)
-        self.texto_cartas_canceladas.pack()
+        # Botón "Ver Cartas Porte Canceladas"
+        boton_ver_cartas = tk.Button(self.barra_tareas, text="Ver Cartas Porte Canceladas", command=self.mostrar_cartas_canceladas)
+        boton_ver_cartas.pack(side=tk.LEFT, padx=5, pady=5)
+
+        # Texto "Cartas Porte Canceladas"
+        self.texto_cartas_canceladas = tk.Label(self.barra_tareas, text="Cartas Porte Canceladas", fg="black")
+        self.texto_cartas_canceladas.pack(side=tk.LEFT, padx=5, pady=5)
 
         self.geometry("800x600")
 
@@ -183,9 +195,7 @@ class Aplicacion(tk.Tk):
             # Almacenar el DataFrame cargado en un atributo de la clase
             self.df = df
             cartas_canceladas = self.calcular_cartas_canceladas()
-            self.texto_cartas_canceladas.config(
-                text=f"Cartas Porte canceladas: {cartas_canceladas}", fg="black"
-            )
+            self.texto_cartas_canceladas.config(text=f"Cartas Porte canceladas: {cartas_canceladas}", fg="black")
 
     def crear_formulario(self):
         self.formulario_frame = tk.Frame(self)
@@ -303,6 +313,14 @@ class Aplicacion(tk.Tk):
             if origen_municipio == destino_municipio:
                 contador += 1
         return contador
+
+    def mostrar_cartas_canceladas(self):
+        cartas_canceladas = [fila["cartaPorte"] for _, fila in self.df.iterrows() if fila["origenMunicipio"] == fila["destinoMunicipio"]]
+        if cartas_canceladas:
+            mensaje = "Cartas Porte Canceladas:\n" + "\n".join(cartas_canceladas)
+        else:
+            mensaje = "No hay Cartas Porte Canceladas"
+        tk.messagebox.showinfo("Cartas Porte Canceladas", mensaje)
 
 
 if __name__ == "__main__":

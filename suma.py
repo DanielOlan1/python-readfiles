@@ -1,4 +1,3 @@
-import pandas as pd
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
@@ -9,7 +8,10 @@ from reportlab.pdfgen import canvas
 import math
 from fpdf import FPDF
 import os
-
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+import pandas as pd
 def mostrar_cartas_canceladas(df):
     cartas_canceladas = [
         {
@@ -106,36 +108,38 @@ def exportar_a_pdf(cartas_canceladas):
             initialfile=default_file_name,
         )
         if archivo_guardado:
-            pdf = canvas.Canvas(archivo_guardado, pagesize=letter)
+            doc = SimpleDocTemplate(archivo_guardado, pagesize=letter)
+            story = []
 
-            pdf.setTitle("Cartas Porte Canceladas")
-            pdf.setFont("Helvetica-Bold", 14)
-            pdf.drawString(50, 750, "Cartas Porte Canceladas")
+            styles = getSampleStyleSheet()
 
-            pdf.setFont("Helvetica", 12)
-            y = 720
+            titulo = Paragraph("Cartas Porte Canceladas", styles["Heading1"])
+            story.append(titulo)
+            story.append(Spacer(1, 12))
+
             for carta_porte in cartas_canceladas:
                 datos_carta_porte = obtener_datos_carta_porte(carta_porte)
 
-                pdf.drawString(50, y, "Operador: " + str(datos_carta_porte["operador"]))
-                pdf.drawString(50, y - 20, "Unidad: " + str(datos_carta_porte["unidad"]))
-                pdf.drawString(50, y - 40, "Letra PR: " + str(datos_carta_porte["letraPR"]))
-                pdf.drawString(50, y - 60, "Origen Municipio: " + str(datos_carta_porte["origenMunicipio"]))
-                pdf.drawString(50, y - 80, "Destino Municipio: " + str(datos_carta_porte["destinoMunicipio"]))
-                pdf.drawString(50, y - 100, "Cliente: " + str(datos_carta_porte["cliente"]))
-                pdf.drawString(50, y - 120, "Producto: " + str(datos_carta_porte["producto"]))
-                pdf.drawString(50, y - 140, "Carta Porte: " + str(datos_carta_porte["cartaPorte"]))
-                pdf.drawString(50, y - 160, "Cancelada: " + str(datos_carta_porte["cancelada"]))
+                operador = Paragraph(f"<b>Operador:</b> {datos_carta_porte['operador']}", styles["Normal"])
+                unidad = Paragraph(f"<b>Unidad:</b> {datos_carta_porte['unidad']}", styles["Normal"])
+                letraPR = Paragraph(f"<b>Letra PR:</b> {datos_carta_porte['letraPR']}", styles["Normal"])
+                origenMunicipio = Paragraph(f"<b>Origen Municipio:</b> {datos_carta_porte['origenMunicipio']}", styles["Normal"])
+                destinoMunicipio = Paragraph(f"<b>Destino Municipio:</b> {datos_carta_porte['destinoMunicipio']}", styles["Normal"])
+                cliente = Paragraph(f"<b>Cliente:</b> {datos_carta_porte['cliente']}", styles["Normal"])
+                producto = Paragraph(f"<b>Producto:</b> {datos_carta_porte['producto']}", styles["Normal"])
+                cartaPorte = Paragraph(f"<b>Carta Porte:</b> {datos_carta_porte['cartaPorte']}", styles["Normal"])
+                cancelada = Paragraph(f"<b>Cancelada:</b> {datos_carta_porte['cancelada']}", styles["Normal"])
 
-                y -= 200
+                story.extend([operador, unidad, letraPR, origenMunicipio, destinoMunicipio, cliente, producto, cartaPorte, cancelada])
+                story.append(Spacer(1, 12))
 
-            pdf.save()
+            doc.build(story)
             messagebox.showinfo("Exportar a PDF", "Las Cartas Porte Canceladas se exportaron correctamente.")
     else:
         messagebox.showinfo("Exportar a PDF", "No hay Cartas Porte Canceladas para exportar.")
 
-
 class Aplicacion(tk.Tk):
+    
     def __init__(self):
         super().__init__()
         self.title("Lectura de archivo de Excel")
@@ -167,6 +171,14 @@ class Aplicacion(tk.Tk):
         # Botón "Abrir archivo de Excel"
         boton_abrir = tk.Button(self.barra_tareas, text="Abrir archivo de Excel", command=self.abrir_archivo_excel)
         boton_abrir.pack(side=tk.LEFT, padx=5, pady=5)
+
+        # Botón "Mostrar Cartas Faltantes/Sobrantes"
+        boton_mostrar = tk.Button(
+            self.barra_tareas, text="Mostrar Cartas Faltantes/Sobrantes", command=lambda: mostrar_cartas_faltantes_sobrantes(self.df)
+        )
+        boton_mostrar.pack(side=tk.LEFT, padx=5, pady=5)
+
+        self.geometry("800x600")
 
         # Cuadro de búsqueda
         self.busqueda_texto = tk.Entry(self.barra_tareas)
@@ -453,6 +465,76 @@ class Aplicacion(tk.Tk):
         )
         return cartas_canceladas
 
+    def mostrar_cartas_faltantes_sobrantes(df):
+        cartas_faltantes_sobrantes = [
+            {
+                "operador": fila["operador"],
+                "unidad": fila["unidad"],
+                "letraPR": fila["letraPR"],
+                "origenMunicipio": fila["origenMunicipio"],
+                "destinoMunicipio": fila["destinoMunicipio"],
+                "cliente": fila["cliente"],
+                "producto": fila["producto"],
+                "cartaPorte": fila["cartaPorte"],
+                "cancelada": "Yes" if fila["cancelada"] else "No",
+                "faltante": fila["faltante"]
+            }
+            for _, fila in df.iterrows()
+            if fila["fechaDescarga"] != 0
+        ]
+
+        if cartas_faltantes_sobrantes:
+            ventana_cartas_faltantes_sobrantes = tk.Toplevel()
+            ventana_cartas_faltantes_sobrantes.title("Cartas Porte Faltantes y Sobrantes")
+
+            tabla_frame = tk.Frame(ventana_cartas_faltantes_sobrantes)
+            tabla_frame.pack(fill=tk.BOTH, expand=True)
+
+            tabla_scroll = ttk.Scrollbar(tabla_frame, orient="vertical")
+            tabla_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+            tabla = ttk.Treeview(tabla_frame, yscrollcommand=tabla_scroll.set)
+            tabla_scroll.config(command=tabla.yview)
+
+            columnas = [
+                "operador",
+                "unidad",
+                "letraPR",
+                "origenMunicipio",
+                "destinoMunicipio",
+                "cliente",
+                "producto",
+                "cartaPorte",
+                "cancelada",
+                "faltante"
+            ]
+            tabla["columns"] = columnas
+
+            for columna in columnas:
+                tabla.heading(columna, text=columna)
+
+            for carta_porte_data in cartas_faltantes_sobrantes:
+                fila_values = [
+                    str(carta_porte_data[col]) if not pd.isna(carta_porte_data[col]) else ""
+                    for col in columnas[:-2]  # Exclude "cancelada" and "faltante" columns
+                ]
+                fila_values.append(carta_porte_data["cancelada"])
+                fila_values.append(carta_porte_data["faltante"])
+
+                if carta_porte_data["faltante"] < 0:
+                    tabla.insert("", tk.END, values=fila_values, tags=("sobrante",))
+                elif carta_porte_data["faltante"] > 0:
+                    tabla.insert("", tk.END, values=fila_values, tags=("faltante",))
+                else:
+                    tabla.insert("", tk.END, values=fila_values)
+
+            tabla.tag_configure("sobrante", foreground="green")
+            tabla.tag_configure("faltante", foreground="red")
+
+            tabla.pack(fill=tk.BOTH, expand=True)
+
+        else:
+            messagebox.showinfo("Cartas Porte Faltantes y Sobrantes", "No hay Cartas Porte Faltantes y Sobrantes para mostrar.")
 
 if __name__ == "__main__":
     aplicacion = Aplicacion()

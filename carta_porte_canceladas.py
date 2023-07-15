@@ -19,7 +19,7 @@ def mostrar_cartas_canceladas(df):
             str(fila["cliente"]),
             str(fila["producto"]),
             str(fila["cartaPorte"]),
-            "Yes",
+        
         ]
         for _, fila in df.iterrows()
         if fila["origenMunicipio"] == fila["destinoMunicipio"]

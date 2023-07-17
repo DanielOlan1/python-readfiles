@@ -7,6 +7,7 @@ from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
 
+
 def mostrar_cartas_faltantes_sobrantes(df):
     filas_verde = []
     filas_rojo = []
@@ -37,7 +38,7 @@ def mostrar_cartas_faltantes_sobrantes(df):
                 initialdir=folder_path
             )
             if filename:
-                doc = SimpleDocTemplate(filename, pagesize=letter)
+                doc = SimpleDocTemplate(filename, pagesize=landscape(letter))
 
                 data = [["Operador", "Unidad", "Letra PR", "Origen", "Destino", "Cliente", "Producto", "Carta Porte", "Faltante"]]
                 for item in tabla.get_children():
@@ -49,7 +50,17 @@ def mostrar_cartas_faltantes_sobrantes(df):
                             row_data.append("")
                     data.append(row_data)
 
-                table = Table(data)
+                # Obtener el ancho disponible de la página
+                available_width = doc.width - doc.leftMargin - doc.rightMargin
+
+                # Obtener el número de columnas
+                num_columns = len(data[0])
+
+                # Calcular el ancho de cada columna en función del ancho disponible
+                column_width = available_width / num_columns
+
+                # Crear la instancia de la tabla con los anchos de columna definidos
+                table = Table(data, colWidths=[column_width] * num_columns)
                 style = TableStyle([
                     ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
                     ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -59,6 +70,13 @@ def mostrar_cartas_faltantes_sobrantes(df):
                     ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
                     ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
                     ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),  # Alinear verticalmente al centro
+                    ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),  # Cambiar la fuente de la tabla
+                    ('FONTSIZE', (0, 1), (-1, -1), 6),  # Cambiar el tamaño de fuente de la tabla
+                    ('TOPPADDING', (0, 0), (-1, -1), 8),  # Añadir espacio superior de celda
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 8),  # Añadir espacio inferior de celda
+                    ('LEFTPADDING', (0, 0), (-1, -1), 5),  # Añadir espacio izquierdo de celda
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 5),  # Añadir espacio derecho de celda
                 ])
                 table.setStyle(style)
 

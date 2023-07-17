@@ -7,7 +7,6 @@ from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
 
-
 def mostrar_cartas_faltantes_sobrantes(df):
     filas_verde = []
     filas_rojo = []
@@ -61,6 +60,10 @@ def mostrar_cartas_faltantes_sobrantes(df):
 
                 # Crear la instancia de la tabla con los anchos de columna definidos
                 table = Table(data, colWidths=[column_width] * num_columns)
+
+                # Obtener el índice de la columna de los números (Faltante en este caso)
+                num_column_index = columnas.index("faltante")
+
                 style = TableStyle([
                     ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
                     ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -70,15 +73,25 @@ def mostrar_cartas_faltantes_sobrantes(df):
                     ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
                     ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
                     ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),  # Alinear verticalmente al centro
-                    ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),  # Cambiar la fuente de la tabla
-                    ('FONTSIZE', (0, 1), (-1, -1), 6),  # Cambiar el tamaño de fuente de la tabla
-                    ('TOPPADDING', (0, 0), (-1, -1), 8),  # Añadir espacio superior de celda
-                    ('BOTTOMPADDING', (0, 0), (-1, -1), 8),  # Añadir espacio inferior de celda
-                    ('LEFTPADDING', (0, 0), (-1, -1), 5),  # Añadir espacio izquierdo de celda
-                    ('RIGHTPADDING', (0, 0), (-1, -1), 5),  # Añadir espacio derecho de celda
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                    ('FONTSIZE', (0, 1), (-1, -1), 6),
+                    ('TOPPADDING', (0, 0), (-1, -1), 8),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 5),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 5),
                 ])
+
+                # Aplicar el estilo de color rojo a los números positivos en la columna "Faltante"
+                for i, row in enumerate(data[1:], start=1):
+                    faltante = float(row[num_column_index])
+                    if faltante > 0:
+                        style.add('TEXTCOLOR', (num_column_index, i), (num_column_index, i), colors.red, colors.transparent)
+                    elif faltante == 0:
+                        style.add('TEXTCOLOR', (num_column_index, i), (num_column_index, i), colors.green, colors.transparent)
+
                 table.setStyle(style)
+
 
                 elements = [table]
                 doc.build(elements)

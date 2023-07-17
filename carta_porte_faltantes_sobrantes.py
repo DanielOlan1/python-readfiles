@@ -4,7 +4,7 @@ from tkinter import messagebox
 from tkinter import filedialog
 import pandas as pd
 from reportlab.lib.pagesizes import letter, landscape
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer
 from reportlab.lib import colors
 
 def mostrar_cartas_faltantes_sobrantes(df):
@@ -39,61 +39,84 @@ def mostrar_cartas_faltantes_sobrantes(df):
             if filename:
                 doc = SimpleDocTemplate(filename, pagesize=landscape(letter))
 
-                data = [["Operador", "Unidad", "Letra PR", "Origen", "Destino", "Cliente", "Producto", "Carta Porte", "Faltante"]]
+                data_verde = [["Operador Sin Faltantes"]]
+                data_rojo = [["Operador con Faltante"]]
+
                 for item in tabla.get_children():
                     row_data = []
                     for value in tabla.item(item)['values']:
                         if value:
                             row_data.append(value)
                         else:
-                            row_data.append("")
-                    data.append(row_data)
+                            row_data.append("N/A")  # Valor predeterminado para celdas vacías
 
-                # Obtener el ancho disponible de la página
+                    try:
+                        faltante = float(row_data[-1])
+                        if faltante <= 0:
+                            data_verde.append(row_data)
+                        else:
+                            data_rojo.append(row_data)
+                    except ValueError:
+                        # Manejo de valores no numéricos
+                        pass
+
                 available_width = doc.width - doc.leftMargin - doc.rightMargin
 
-                # Obtener el número de columnas
-                num_columns = len(data[0])
+                column_width = available_width / len(columnas)
 
-                # Calcular el ancho de cada columna en función del ancho disponible
-                column_width = available_width / num_columns
+                table_verde = Table(data_verde, colWidths=[column_width] * len(columnas))
+                table_rojo = Table(data_rojo, colWidths=[column_width] * len(columnas))
 
-                # Crear la instancia de la tabla con los anchos de columna definidos
-                table = Table(data, colWidths=[column_width] * num_columns)
-
-                # Obtener el índice de la columna de los números (Faltante en este caso)
-                num_column_index = columnas.index("faltante")
-
-                style = TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                # Estilo para celdas positivas (verdes)
+                estilo_verde = TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.green),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                    ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
                     ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                    ('FONTSIZE', (0, 0), (-1, 0), 12),
+                    ('FONTSIZE', (0, 0), (-1, 0), 8),
                     ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
                     ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
                     ('GRID', (0, 0), (-1, -1), 1, colors.black),
                     ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                     ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-                    ('FONTSIZE', (0, 1), (-1, -1), 6),
+                    ('FONTSIZE', (0, 1), (-1, -1), 10),
                     ('TOPPADDING', (0, 0), (-1, -1), 8),
                     ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
                     ('LEFTPADDING', (0, 0), (-1, -1), 5),
                     ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+                    ('TEXTCOLOR', (0, 1), (-1, -1), colors.red, colors.transparent),
+                    ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+                    ('WRAP', (0, 1), (-1, -1), True),  # Ajustar el contenido de las celdas
+                    ('LEADING', (0, 0), (-1, -1), 12),  # Espacio adicional entre líneas de texto
                 ])
 
-                # Aplicar el estilo de color rojo a los números positivos en la columna "Faltante"
-                for i, row in enumerate(data[1:], start=1):
-                    faltante = float(row[num_column_index])
-                    if faltante > 0:
-                        style.add('TEXTCOLOR', (num_column_index, i), (num_column_index, i), colors.red, colors.transparent)
-                    elif faltante == 0:
-                        style.add('TEXTCOLOR', (num_column_index, i), (num_column_index, i), colors.green, colors.transparent)
+                # Estilo para celdas negativas (rojas)
+                estilo_rojo = TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.red),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                    ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 8),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                    ('FONTSIZE', (0, 1), (-1, -1), 10),
+                    ('TOPPADDING', (0, 0), (-1, -1), 8),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 5),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+                    ('TEXTCOLOR', (0, 1), (-1, -1), colors.red, colors.transparent),
+                    ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+                    ('WRAP', (0, 1), (-1, -1), True),  # Ajustar el contenido de las celdas
+                    ('LEADING', (0, 0), (-1, -1), 12),  # Espacio adicional entre líneas de texto
+                ])
 
-                table.setStyle(style)
+                table_verde.setStyle(estilo_verde)
+                table_rojo.setStyle(estilo_rojo)
 
-
-                elements = [table]
+                elements = [table_verde, Spacer(0, 10), table_rojo]
                 doc.build(elements)
 
                 messagebox.showinfo("Exportación exitosa", f"Los datos se han exportado correctamente a {filename}")
@@ -158,6 +181,12 @@ def mostrar_cartas_faltantes_sobrantes(df):
         ]
         tabla["columns"] = columnas
 
+        # Configurar el ancho de las columnas
+        column_widths = [300, 100, 80, 150, 150, 200, 200, 150, 100]  # Ajusta los valores según tus necesidades
+
+        for i, columna in enumerate(columnas):
+            tabla.column(columna, width=column_widths[i], anchor=tk.W)
+
         for columna in columnas:
             tabla.heading(columna, text=columna)
 
@@ -193,3 +222,4 @@ def mostrar_cartas_faltantes_sobrantes(df):
 
     else:
         messagebox.showinfo("Cartas Porte Faltantes/Sobrantes", "No hay Cartas Porte Faltantes/Sobrantes para mostrar.")
+

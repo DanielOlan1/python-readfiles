@@ -7,6 +7,20 @@ from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer
 from reportlab.lib import colors
 
+def dividir_texto(texto, longitud_maxima):
+    palabras = texto.split()
+    lineas = []
+    linea_actual = ""
+    for palabra in palabras:
+        if len(linea_actual) + len(palabra) <= longitud_maxima:
+            linea_actual += " " + palabra
+        else:
+            lineas.append(linea_actual.strip())
+            linea_actual = palabra
+    lineas.append(linea_actual.strip())
+    return lineas
+
+
 def mostrar_cartas_faltantes_sobrantes(df):
     filas_verde = []
     filas_rojo = []
@@ -71,7 +85,7 @@ def mostrar_cartas_faltantes_sobrantes(df):
                 estilo_verde = TableStyle([
                     ('BACKGROUND', (0, 0), (-1, 0), colors.green),
                     ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-                    ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
                     ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                     ('FONTSIZE', (0, 0), (-1, 0), 8),
                     ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
@@ -79,7 +93,7 @@ def mostrar_cartas_faltantes_sobrantes(df):
                     ('GRID', (0, 0), (-1, -1), 1, colors.black),
                     ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                     ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-                    ('FONTSIZE', (0, 1), (-1, -1), 10),
+                    ('FONTSIZE', (0, 1), (-1, -1), 8),
                     ('TOPPADDING', (0, 0), (-1, -1), 8),
                     ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
                     ('LEFTPADDING', (0, 0), (-1, -1), 5),
@@ -94,7 +108,7 @@ def mostrar_cartas_faltantes_sobrantes(df):
                 estilo_rojo = TableStyle([
                     ('BACKGROUND', (0, 0), (-1, 0), colors.red),
                     ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-                    ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
                     ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                     ('FONTSIZE', (0, 0), (-1, 0), 8),
                     ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
@@ -102,7 +116,7 @@ def mostrar_cartas_faltantes_sobrantes(df):
                     ('GRID', (0, 0), (-1, -1), 1, colors.black),
                     ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                     ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-                    ('FONTSIZE', (0, 1), (-1, -1), 10),
+                    ('FONTSIZE', (0, 1), (-1, -1), 8),
                     ('TOPPADDING', (0, 0), (-1, -1), 8),
                     ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
                     ('LEFTPADDING', (0, 0), (-1, -1), 5),
@@ -182,7 +196,7 @@ def mostrar_cartas_faltantes_sobrantes(df):
         tabla["columns"] = columnas
 
         # Configurar el ancho de las columnas
-        column_widths = [300, 100, 80, 150, 150, 200, 200, 150, 100]  # Ajusta los valores según tus necesidades
+        column_widths = [500, 150, 100, 300, 300, 350, 350, 250, 150]
 
         for i, columna in enumerate(columnas):
             tabla.column(columna, width=column_widths[i], anchor=tk.W)
@@ -191,10 +205,18 @@ def mostrar_cartas_faltantes_sobrantes(df):
             tabla.heading(columna, text=columna)
 
         for carta_porte_data in cartas_faltantes_sobrantes:
-            fila_values = [
-                carta_porte_data[col] if not pd.isna(carta_porte_data[col]) else ""
-                for col in columnas
-            ]
+            fila_values = []
+            for col in columnas:
+                valor = carta_porte_data[col]
+                if not pd.isna(valor):
+                    valor = str(valor)  # Convertir a cadena
+                    if len(valor) > 8:
+                        lineas = dividir_texto(valor, 6)
+                        fila_values.append("\n".join(lineas))
+                    else:
+                        fila_values.append(valor)
+                else:
+                    fila_values.append("")
             faltante = carta_porte_data["faltante"]
             if faltante <= 0:
                 tabla.insert("", tk.END, values=fila_values, tags=("verde",))
@@ -222,4 +244,3 @@ def mostrar_cartas_faltantes_sobrantes(df):
 
     else:
         messagebox.showinfo("Cartas Porte Faltantes/Sobrantes", "No hay Cartas Porte Faltantes/Sobrantes para mostrar.")
-

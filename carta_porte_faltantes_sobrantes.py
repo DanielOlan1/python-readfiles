@@ -199,7 +199,7 @@ def mostrar_cartas_faltantes_sobrantes(df):
         column_widths = [500, 150, 100, 300, 300, 350, 350, 250, 150]
 
         for i, columna in enumerate(columnas):
-            tabla.column(columna, width=column_widths[i], anchor=tk.W)
+            tabla.column(columna, width=column_widths[i], anchor=tk.W, stretch=tk.NO)
 
         for columna in columnas:
             tabla.heading(columna, text=columna)
@@ -244,3 +244,4 @@ def mostrar_cartas_faltantes_sobrantes(df):
 
     else:
         messagebox.showinfo("Cartas Porte Faltantes/Sobrantes", "No hay Cartas Porte Faltantes/Sobrantes para mostrar.")
+

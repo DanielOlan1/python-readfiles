@@ -40,6 +40,7 @@ class Aplicacion(tk.Tk):
         # Crear la barra de tareas
         self.barra_tareas = tk.Frame(self)
         self.barra_tareas.pack(side=tk.TOP, fill=tk.X)
+        
 
         # Botón "Abrir archivo de Excel"
         boton_abrir = tk.Button(self.barra_tareas, text="Abrir archivo de Excel", command=self.abrir_archivo_excel)

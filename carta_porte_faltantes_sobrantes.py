@@ -25,10 +25,6 @@ def mostrar_cartas_faltantes_sobrantes(df):
     filas_verde = []
     filas_rojo = []
 
-    def toggle_seleccion():
-        seleccion = casilla_var.get()
-        casilla_var.set(not seleccion)
-
     def borrar_filas():
         seleccionadas = tabla.selection()
         if seleccionadas:
@@ -136,7 +132,7 @@ def mostrar_cartas_faltantes_sobrantes(df):
                 messagebox.showinfo("Exportación exitosa", f"Los datos se han exportado correctamente a {filename}")
         else:
             messagebox.showinfo("Exportación cancelada", "No se ha seleccionado ninguna ubicación.")
-
+    df = df.sort_values(by="faltante", ascending=False)
     for _, fila in df.iterrows():
         if fila["fechaDescarga"] != 0 and fila["faltante"] != fila["litrosCargados"]:
             carta_porte_data = {
@@ -159,19 +155,9 @@ def mostrar_cartas_faltantes_sobrantes(df):
     cartas_faltantes_sobrantes = filas_verde + filas_rojo
 
     if cartas_faltantes_sobrantes:
+
         ventana_cartas_faltantes_sobrantes = tk.Toplevel()
         ventana_cartas_faltantes_sobrantes.title("Cartas Porte Faltantes/Sobrantes")
-
-        casilla_var = tk.BooleanVar()
-        casilla_checkbutton = tk.Checkbutton(
-            ventana_cartas_faltantes_sobrantes,
-            text="A Sisa",
-            variable=casilla_var,
-            onvalue=True,
-            offvalue=False,
-            command=toggle_seleccion
-        )
-        casilla_checkbutton.pack()
 
         tabla_frame = tk.Frame(ventana_cartas_faltantes_sobrantes)
         tabla_frame.pack(fill=tk.BOTH, expand=True)
@@ -181,6 +167,7 @@ def mostrar_cartas_faltantes_sobrantes(df):
 
         tabla = ttk.Treeview(tabla_frame, yscrollcommand=tabla_scroll.set)
         tabla_scroll.config(command=tabla.yview)
+
 
         columnas = [
             "operador",
@@ -196,7 +183,7 @@ def mostrar_cartas_faltantes_sobrantes(df):
         tabla["columns"] = columnas
 
         # Configurar el ancho de las columnas
-        column_widths = [500, 150, 100, 300, 300, 350, 350, 250, 150]
+        column_widths = [300, 300, 300, 300, 300, 300, 700, 300, 300]
 
         for i, columna in enumerate(columnas):
             tabla.column(columna, width=column_widths[i], anchor=tk.W, stretch=tk.NO)
@@ -211,7 +198,7 @@ def mostrar_cartas_faltantes_sobrantes(df):
                 if not pd.isna(valor):
                     valor = str(valor)  # Convertir a cadena
                     if len(valor) > 8:
-                        lineas = dividir_texto(valor, 6)
+                        lineas = dividir_texto(valor, 10)
                         fila_values.append("\n".join(lineas))
                     else:
                         fila_values.append(valor)
@@ -222,7 +209,11 @@ def mostrar_cartas_faltantes_sobrantes(df):
                 tabla.insert("", tk.END, values=fila_values, tags=("verde",))
             else:
                 tabla.insert("", tk.END, values=fila_values, tags=("rojo",))
+            tabla_scroll.config(command=tabla.yview)
 
+        tabla_scroll.config(command=tabla.yview)    
+        tabla.pack(fill=tk.BOTH, expand=True)
+        tabla.configure(yscrollcommand=tabla_scroll.set)
         tabla.tag_configure("verde", foreground="green")
         tabla.tag_configure("rojo", foreground="red")
 
@@ -241,6 +232,7 @@ def mostrar_cartas_faltantes_sobrantes(df):
             command=exportar_pdf
         )
         boton_exportar.pack(side=tk.BOTTOM, pady=10)
+
 
     else:
         messagebox.showinfo("Cartas Porte Faltantes/Sobrantes", "No hay Cartas Porte Faltantes/Sobrantes para mostrar.")

@@ -52,8 +52,6 @@ class Aplicacion(tk.Tk):
         )
         boton_mostrar.pack(side=tk.LEFT, padx=5, pady=5)
 
-        self.geometry("800x600")
-
         # Cuadro de búsqueda
         self.busqueda_texto = tk.Entry(self.barra_tareas)
         self.busqueda_texto.pack(side=tk.LEFT, padx=5, pady=5)
